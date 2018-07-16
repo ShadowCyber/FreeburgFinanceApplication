@@ -138,10 +138,7 @@ namespace TravisFreeburgFinance
                     MessageBox.Show("Failed to add/update transaction. ");
 
                 }
-
-
-
-            }
+                            }
             else
             {
                 MessageBox.Show("Amount is required, please fill it out with a valid number before you save. ");

@@ -260,7 +260,7 @@ namespace TravisFreeburgFinance
 
         private void cbBudgetCategory_SelectedIndexChanged(object sender, EventArgs e)
         {
-            List<DataModel.Budget> lBudget = oFactory.oData.RetrieveBudgets();
+            List<DataModel.Budget> lBudget = oFactory.oData.Budget_RetrieveAll();
             if (cbBudgetCategory.SelectedItem != null)
             {
                 if (lBudget?.Count > 0)

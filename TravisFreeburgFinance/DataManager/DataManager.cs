@@ -32,17 +32,20 @@ namespace TravisFreeburgFinance.DataManager
 
             if (!string.IsNullOrEmpty(tmpSearch.SearchText))
             {
+                // if type string, do contains.
                 if (propertyInfo.PropertyType == typeof(string))
                 {
                     lTransactions = lTransactions.Where(transaction => (propertyInfo.GetValue(transaction, null).ToString().ToLower().Contains(tmpSearch.SearchText.ToLower())) && DateTime.Compare(DateTime.Parse(transaction.TransactionDate), tmpSearch.BeginningDate.Value) >= 0 && DateTime.Compare(DateTime.Parse(transaction.TransactionDate), tmpSearch.EndDate.Value) <= 0).OrderBy(x => sortpropertyInfo.GetValue(x, null)).ToList();
                 }
                 else
                 {
+                    // This will do a search as equals otherwise.
                     lTransactions = lTransactions.Where(transaction => (propertyInfo.GetValue(transaction, null).ToString().Equals(tmpSearch.SearchText)) && DateTime.Parse(transaction.TransactionDate) >= tmpSearch.BeginningDate.Value && DateTime.Parse(transaction.TransactionDate) <= tmpSearch.EndDate.Value).OrderBy(x => sortpropertyInfo.GetValue(x, null)).ToList();
                 }
             }
             else
             {
+                // if search is nothing, reset it within the time frame provided. 
                 lTransactions = lTransactions.Where(transaction => DateTime.Parse(transaction.TransactionDate) >= tmpSearch.BeginningDate.Value && DateTime.Parse(transaction.TransactionDate) <= tmpSearch.EndDate.Value).OrderBy(x => sortpropertyInfo.GetValue(x, null)).ToList();
             }
 
@@ -54,7 +57,7 @@ namespace TravisFreeburgFinance.DataManager
         {
             try
             {
-                oTransaction = oFactory.oData.AddTransaction(oTransaction);
+                oTransaction = oFactory.oData.Transaction_Add(oTransaction);
 
                 if (!ValidateBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oTransaction.Category)))
                 {
@@ -73,7 +76,7 @@ namespace TravisFreeburgFinance.DataManager
         {
             try
             {
-                oFactory.oData.UpdateTransaction(oTransaction);
+                oFactory.oData.Transaction_Update(oTransaction);
 
                 if (!ValidateBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oTransaction.Category)))
                 {
@@ -93,10 +96,10 @@ namespace TravisFreeburgFinance.DataManager
         {
             try
             {
-                oFactory.oData.RemoveTransaction((long)oTransaction.TransactionID);
+                oFactory.oData.Transaction_Delete((long)oTransaction.TransactionID);
 
 
-                if (ValidateBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oTransaction.Category)))
+                if (!ValidateBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oTransaction.Category)))
                 {
                     oTransaction.Message = OverBudgetMessage;
                     oTransaction.Message = "Warning: You are over budget this month.";
@@ -116,7 +119,7 @@ namespace TravisFreeburgFinance.DataManager
 
         internal DataModel.Budget GetBudget(string oCat)
         {
-            List<DataModel.Budget> lBudgets = oFactory.oData.RetrieveBudgets();
+            List<DataModel.Budget> lBudgets = oFactory.oData.Budget_RetrieveAll();
             DataModel.Budget oBudget = lBudgets.Where(tmp => tmp.Category == oCat).FirstOrDefault();
 
             return oBudget;
@@ -126,7 +129,7 @@ namespace TravisFreeburgFinance.DataManager
         {
             try
             {
-                oFactory.oData.AddUpdateBudget(oBudget);
+                oFactory.oData.Budget_AddUpdate(oBudget);
 
                 if (!ValidateBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oBudget.Category)))
                 {
@@ -148,7 +151,7 @@ namespace TravisFreeburgFinance.DataManager
         {
             try
             {
-                oFactory.oData.RemoveBudget((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oBudget.Category));
+                oFactory.oData.Budget_Delete((DataModel.eCategory)Enum.Parse(typeof(DataModel.eCategory), oBudget.Category));
 
             }
             catch (Exception ex)
@@ -166,11 +169,11 @@ namespace TravisFreeburgFinance.DataManager
 
         private bool ValidateBudget(DataModel.eCategory oCategory)
         {
-            // Grab all Transactions that have an amount and under the category inputted
-            List<DataModel.Transaction> lTransactions = oFactory.oData.RetrieveTransactions().Where(tmpTran => tmpTran.Category == oCategory.ToString() && tmpTran.Amount != null && tmpTran.Amount > 0 && DateTime.Parse(tmpTran.TransactionDate).Month == DateTime.Now.Month).ToList();
+            // Grab all Transactions that have an amount and under the category inputted and they said that they want to include it in the budget.
+            List<DataModel.Transaction> lTransactions = oFactory.oData.RetrieveTransactions().Where(tmpTran => tmpTran.IgnoreBudget == false && tmpTran.Category == oCategory.ToString() && tmpTran.Amount != null && tmpTran.Amount > 0 && DateTime.Parse(tmpTran.TransactionDate).Month == DateTime.Now.Month).ToList();
 
             // Get the budget for the inputted category
-            DataModel.Budget oBudget = oFactory.oData.RetrieveBudgets().Where(tmpBudget => tmpBudget.Category == oCategory.ToString()).FirstOrDefault();
+            DataModel.Budget oBudget = oFactory.oData.Budget_RetrieveAll().Where(tmpBudget => tmpBudget.Category == oCategory.ToString()).FirstOrDefault();
 
             if (oBudget != null && !string.IsNullOrEmpty(oBudget.Value) && lTransactions?.Count > 0)
             {

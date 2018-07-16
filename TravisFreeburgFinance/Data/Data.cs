@@ -148,7 +148,7 @@ namespace TravisFreeburgFinance.Data
             return oReturn;
         }
 
-        public void UpdateTransaction(DataModel.Transaction oTransaction)
+        public void Transaction_Update(DataModel.Transaction oTransaction)
         {
             List<DataModel.Transaction> lTransactions = RetrieveTransactions();
             long? TransactionID = oTransaction.TransactionID;
@@ -162,10 +162,10 @@ namespace TravisFreeburgFinance.Data
                 }
             }
 
-            UpdateTransaction(lTransactions);
+            UpdateTransactionFile(lTransactions);
         }
 
-        public void RemoveTransaction(long ID)
+        public void Transaction_Delete(long ID)
         {
             List<DataModel.Transaction> lTransactions = RetrieveTransactions();
 
@@ -178,10 +178,10 @@ namespace TravisFreeburgFinance.Data
                 }
             }
 
-            UpdateTransaction(newTransactions);
+            UpdateTransactionFile(newTransactions);
         }
 
-        public DataModel.Transaction AddTransaction(DataModel.Transaction oTransaction)
+        public DataModel.Transaction Transaction_Add(DataModel.Transaction oTransaction)
         {
             List<DataModel.Transaction> lTransactions = RetrieveTransactions();
             long? TransactionID = lTransactions.OrderBy(tmpTran => tmpTran.TransactionID).Select(tmpTran => tmpTran.TransactionID).DefaultIfEmpty(0).LastOrDefault();
@@ -190,7 +190,7 @@ namespace TravisFreeburgFinance.Data
 
             lTransactions.Add(oTransaction);
 
-            UpdateTransaction(lTransactions);
+            UpdateTransactionFile(lTransactions);
 
             return oTransaction;
         }
@@ -199,7 +199,7 @@ namespace TravisFreeburgFinance.Data
 
         #region Budget
 
-        public List<DataModel.Budget> RetrieveBudgets()
+        public List<DataModel.Budget> Budget_RetrieveAll()
         {
             string s = "";
             using (StreamReader sr = File.OpenText(budgetsPath))
@@ -214,9 +214,9 @@ namespace TravisFreeburgFinance.Data
             return Budgets;
         }
 
-        private void UpdateBudget(DataModel.Budget oBudget)
+        private void Budget_Update(DataModel.Budget oBudget)
         {
-            List<DataModel.Budget> lBudgets = RetrieveBudgets();
+            List<DataModel.Budget> lBudgets = Budget_RetrieveAll();
 
             for (int i = 0; i < lBudgets.Count; i++)
             {
@@ -227,12 +227,12 @@ namespace TravisFreeburgFinance.Data
                 }
             }
 
-            UpdateBudgets(lBudgets);
+            UpdateBudgetsFile(lBudgets);
         }
 
-        public void RemoveBudget(DataModel.eCategory eCat)
+        public void Budget_Delete(DataModel.eCategory eCat)
         {
-            List<DataModel.Budget> lBudgets = RetrieveBudgets();
+            List<DataModel.Budget> lBudgets = Budget_RetrieveAll();
             List<DataModel.Budget> newBudgets = new List<DataModel.Budget>();
 
             for (int i = 0; i < lBudgets.Count; i++)
@@ -243,24 +243,33 @@ namespace TravisFreeburgFinance.Data
                 }
             }
 
-            UpdateBudgets(newBudgets);
+            UpdateBudgetsFile(newBudgets);
         }
 
 
-        public void AddUpdateBudget(DataModel.Budget oBudget)
+        public void Budget_AddUpdate(DataModel.Budget oBudget)
         {
-            List<DataModel.Budget> lBudgets = RetrieveBudgets();
+            List<DataModel.Budget> lBudgets = Budget_RetrieveAll();
 
             DataModel.Budget existingBudget = lBudgets.Where(tmpBudget => tmpBudget.Category == oBudget.Category).FirstOrDefault();
-            if (existingBudget != null)
+
+
+            for (int i = 0; i < lBudgets.Count; i++)
             {
-                UpdateBudget(oBudget);
+                if (lBudgets[i].Category == oBudget.Category)
+                {
+                    lBudgets[i] = oBudget;
+                    break;
+                }
             }
-            else
+
+
+            if (existingBudget == null)
             {
                 lBudgets.Add(oBudget);
-                UpdateBudgets(lBudgets);
             }
+
+            UpdateBudgetsFile(lBudgets);
 
         }
 
@@ -272,7 +281,7 @@ namespace TravisFreeburgFinance.Data
 
         #region Private
 
-        private void UpdateTransaction(List<DataModel.Transaction> Transactions)
+        private void UpdateTransactionFile(List<DataModel.Transaction> Transactions)
         {
             string json = JsonConvert.SerializeObject(Transactions);
 
@@ -285,7 +294,7 @@ namespace TravisFreeburgFinance.Data
 
         }
 
-        private void UpdateBudgets(List<DataModel.Budget> Budgets)
+        private void UpdateBudgetsFile(List<DataModel.Budget> Budgets)
         {
             string json = JsonConvert.SerializeObject(Budgets);
 
